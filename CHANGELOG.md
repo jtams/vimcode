@@ -8,6 +8,14 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 ## [Unreleased]
 
+### Added
+
+- Added `_` and `I` support with Vim's first-non-blank behavior.
+
+### Fixed
+
+- `^` now moves to the first non-blank character instead of the start of the line.
+
 ## [0.18.0] — 2026-09-02
 
 ### Added
