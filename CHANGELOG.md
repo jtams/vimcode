@@ -15,6 +15,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 ### Fixed
 
 - `^` now moves to the first non-blank character instead of the start of the line.
+- Escape after `I` now moves left from the actual textarea cursor instead of misplacing the cursor after indentation.
 
 ## [0.18.0] — 2026-09-02
 

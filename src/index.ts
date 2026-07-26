@@ -225,6 +225,17 @@ const plugin: TuiPluginModule = {
             }
             break;
           }
+          case "cursorLeft": {
+            const editor = api.renderer?.currentFocusedEditor;
+            if (editor?.moveCursorLeft) {
+              editor.moveCursorLeft();
+              editor.getLayoutNode?.().markDirty?.();
+              api.renderer?.requestRender?.();
+            } else if (editor) {
+              editor.cursorOffset = Math.max(0, (editor.cursorOffset ?? 0) - 1);
+            }
+            break;
+          }
           case "selectRange": {
             const editor = api.renderer?.currentFocusedEditor;
             if (editor) {
