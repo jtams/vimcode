@@ -263,9 +263,22 @@ const plugin: TuiPluginModule = {
       slashName: cmd,
       run: exitRun,
     }));
+    const submitRun = async () => {
+      setTimeout(() => api.keymap.dispatchCommand("input.submit"), 0);
+    };
+    const submitCommands = ["w", "write"].map((cmd) => ({
+      name: `vimcode.${cmd}`,
+      title: `:${cmd}`,
+      category: "Vim",
+      namespace: "palette",
+      desc: "Send prompt",
+      slashName: cmd,
+      run: submitRun,
+    }));
     api.keymap.registerLayer?.({
       commands: [
         ...exitCommands,
+        ...submitCommands,
         {
           name: "vimcode.vim",
           title: ":vim",
