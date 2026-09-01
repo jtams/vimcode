@@ -8,6 +8,14 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 ## [Unreleased]
 
+### Changed
+
+- Redesigned the vim engine into a modular architecture for easier maintenance and future keybindings. No change to existing keybindings or behavior.
+
+### Fixed
+
+- `dgg` and `drx` no longer leave a stray operator that affected the next keypress.
+
 ## [0.16.0] — 2026-08-31
 
 ### Added
