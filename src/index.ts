@@ -67,11 +67,17 @@ const plugin: TuiPluginModule = {
     const unsubQuestAsked = api.event?.on?.("question.asked", (e: any) => trackPromptEvent(e, 1));
     // biome-ignore lint/suspicious/noExplicitAny: event shape is untyped in the plugin API
     const unsubQuestReplied = api.event?.on?.("question.replied", (e: any) => trackPromptEvent(e, -1));
+    // Dismissing a question emits question.rejected, not question.replied.
+    // Without this the +1 from question.asked never balances and the plugin
+    // stays stuck passing every key through to the host.
+    // biome-ignore lint/suspicious/noExplicitAny: event shape is untyped in the plugin API
+    const unsubQuestRejected = api.event?.on?.("question.rejected", (e: any) => trackPromptEvent(e, -1));
     api.lifecycle?.onDispose?.(() => {
       unsubPermsAsked?.();
       unsubPermsReplied?.();
       unsubQuestAsked?.();
       unsubQuestReplied?.();
+      unsubQuestRejected?.();
     });
 
     function hasActivePrompts(sid: string): boolean {

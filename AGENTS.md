@@ -58,7 +58,7 @@ This API surface makes text objects (`ciw`, `di"`), direct cursor manipulation, 
 
 ```
 src/
-  index.ts       (408 lines)  Plugin entry: intercept registration, action application
+  index.ts       (414 lines)  Plugin entry: intercept registration, action application
   vim/                        Pure vim engine (thin barrel re-exports the public surface):
     index.ts     (7 lines)    Barrel — public surface only. No export *, no internals.
     types.ts     (57 lines)   Action union, VimState, Mode, Operator, Pending, Range, KeyEvent, HandlerResult, PromptAccess
@@ -84,7 +84,7 @@ test/
     normal.test.ts   (823)    handleNormalKey branches
     visual.test.ts   (287)    handleVisualKey branches
     textobject.test.ts (64)   resolveTextObject dispatch seam
-  integration.test.ts (418)   Full pipeline: one-shot normal, plugin init, undo snapshots, version sync
+  integration.test.ts (579)   Full pipeline: one-shot normal, plugin init, undo snapshots, version sync, prompt overlay tracking
   leader.test.ts (125 lines)  Unit tests for leader key matching functions
 ```
 

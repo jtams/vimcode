@@ -8,6 +8,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 ## [Unreleased]
 
+### Fixed
+
+- Dismissing or rejecting a question prompt no longer leaves vimcode stuck passing every key through to the editor (block cursor, typing works, Escape dead). vimcode now also listens for `question.rejected`, not just `question.replied` ([#72](https://github.com/oribarilan/vimcode/issues/72)).
+
 ## [0.18.0] — 2026-09-02
 
 ### Added

@@ -475,3 +475,105 @@ describe("arrow keys pass through the intercept", () => {
     expect(press("j")).toBe(true);
   });
 });
+
+// ── prompt overlay tracking (question.rejected leak) ──────
+
+describe("prompt overlay tracking", () => {
+  // The plugin tracks pending permission/question prompts via events so it can
+  // pass keys through while an overlay owns the keyboard. Every "asked" must be
+  // balanced by a terminal event, otherwise hasActivePrompts() stays true and
+  // the plugin is stuck passing all keys (including Escape) to the host.
+  async function setup() {
+    const plugin = (await import("../src/index")).default;
+    // biome-ignore lint/suspicious/noExplicitAny: test mock
+    let handler: (ctx: any) => void;
+    const events = new Map<string, (e: unknown) => void>();
+    const sessions: Record<string, { parentID?: string }> = { root: {}, child: { parentID: "root" } };
+
+    const api = {
+      renderer: { currentFocusedEditor: undefined },
+      ui: { toast: () => {}, dialog: { open: false } },
+      keymap: {
+        intercept: (_e: string, h: typeof handler) => {
+          handler = h;
+        },
+        dispatchCommand: () => ({ ok: false }),
+      },
+      route: { current: { name: "session", params: { sessionID: "root" } } },
+      state: {
+        session: {
+          get: (id: string) => sessions[id],
+          question: () => [],
+          permission: () => [],
+        },
+      },
+      event: {
+        on: (name: string, h: (e: unknown) => void) => {
+          events.set(name, h);
+          return () => events.delete(name);
+        },
+      },
+      lifecycle: { onDispose: () => {} },
+      kv: {},
+    };
+
+    // biome-ignore lint/suspicious/noExplicitAny: mock API
+    await plugin.tui(api as any, { updateCheck: false } as any, undefined as any);
+
+    const press = (name: string) => {
+      let consumed = false;
+      handler?.({
+        event: { name, eventType: "press" },
+        consume: () => {
+          consumed = true;
+        },
+      });
+      return consumed;
+    };
+
+    const emit = (name: string, properties: Record<string, unknown>) => events.get(name)?.({ properties });
+
+    press("escape"); // leave insert, enter normal mode
+    return { press, emit };
+  }
+
+  it("keys pass through while a question is pending, then resume after question.rejected", async () => {
+    const { press, emit } = await setup();
+
+    emit("question.asked", { id: "q1", sessionID: "root" });
+    expect(press("h")).toBe(false);
+
+    emit("question.rejected", { requestID: "q1", sessionID: "root" });
+    expect(press("h")).toBe(true);
+  });
+
+  it("question.replied also resumes key consumption", async () => {
+    const { press, emit } = await setup();
+
+    emit("question.asked", { id: "q1", sessionID: "root" });
+    expect(press("h")).toBe(false);
+
+    emit("question.replied", { requestID: "q1", sessionID: "root" });
+    expect(press("h")).toBe(true);
+  });
+
+  it("permission.replied resumes key consumption", async () => {
+    const { press, emit } = await setup();
+
+    emit("permission.asked", { id: "p1", sessionID: "root" });
+    expect(press("h")).toBe(false);
+
+    emit("permission.replied", { requestID: "p1", sessionID: "root" });
+    expect(press("h")).toBe(true);
+  });
+
+  it("a prompt on a child session is tracked against its root", async () => {
+    const { press, emit } = await setup();
+
+    emit("question.asked", { id: "q1", sessionID: "child" });
+    expect(press("h")).toBe(false);
+
+    emit("question.rejected", { requestID: "q1", sessionID: "child" });
+    expect(press("h")).toBe(true);
+  });
+});
