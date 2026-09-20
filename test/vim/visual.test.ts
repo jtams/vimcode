@@ -17,14 +17,18 @@ describe("handleVisualKey — motions", () => {
     state.mode = "visual";
   });
 
-  it("h dispatches input.select.left", () => {
-    const r = handleVisualKey(state, "h", ev("h"));
-    expect(cmds(r.actions)).toEqual(["input.select.left"]);
+  it("h extends the selection left", () => {
+    state.visualAnchor = 2;
+    const prompt: PromptAccess = { ...mockPrompt, getCursorOffset: () => 2 };
+    const r = handleVisualKey(state, "h", ev("h"), prompt);
+    expect(selectRanges(r.actions)).toEqual([{ start: 2, end: 1 }]);
+    expect(cursorTos(r.actions)).toEqual([1]);
   });
 
-  it("l dispatches input.select.right", () => {
-    const r = handleVisualKey(state, "l", ev("l"));
-    expect(cmds(r.actions)).toEqual(["input.select.right"]);
+  it("l extends the selection right", () => {
+    const r = handleVisualKey(state, "l", ev("l"), mockPrompt);
+    expect(selectRanges(r.actions)).toEqual([{ start: 0, end: 1 }]);
+    expect(cursorTos(r.actions)).toEqual([1]);
   });
 
   it("j dispatches input.select.down", () => {
@@ -84,10 +88,11 @@ describe("handleVisualKey — motions", () => {
     expect(cursorTos(r.actions)).toEqual([text.indexOf("fourth")]);
   });
 
-  it("3l dispatches input.select.right 3 times", () => {
-    handleVisualKey(state, "3", ev("3"));
-    const r = handleVisualKey(state, "l", ev("l"));
-    expect(cmds(r.actions)).toEqual(["input.select.right", "input.select.right", "input.select.right"]);
+  it("3l extends the selection right three characters", () => {
+    handleVisualKey(state, "3", ev("3"), mockPrompt);
+    const r = handleVisualKey(state, "l", ev("l"), mockPrompt);
+    expect(selectRanges(r.actions)).toEqual([{ start: 0, end: 3 }]);
+    expect(cursorTos(r.actions)).toEqual([3]);
   });
 
   it("G dispatches input.select.buffer.end", () => {

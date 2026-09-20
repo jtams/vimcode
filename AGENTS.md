@@ -33,8 +33,8 @@ vimcode is a TUI plugin for [OpenCode](https://opencode.ai). Before working on i
 
 **Top-level properties (read/write):**
 
-- `cursorOffset: number` — absolute cursor position, readable and writable
-- `visualCursor: { visualRow, visualCol, logicalRow, logicalCol, offset }` — full cursor coordinates (read-only in practice)
+- `cursorOffset: number` — rendered cursor position, readable and writable; its setter uses display columns, so tabs make it unsuitable for raw buffer offsets
+- `visualCursor: { visualRow, visualCol, logicalRow, logicalCol, offset }` — full cursor coordinates (read-only in practice); `logicalCol` and `offset` use display-width units
 - `cursorStyle: { style: "block" | "line" | "underline" | "default", blinking: boolean }` — set directly, no DECSCUSR escape needed
 - `plainText: string` — buffer content
 - `selectionBg: RGBA`, `selectionFg: RGBA` — custom selection highlight colors
@@ -42,13 +42,13 @@ vimcode is a TUI plugin for [OpenCode](https://opencode.ai). Before working on i
 **Top-level methods:**
 
 - `moveCursorLeft/Right/Up/Down()` — direct cursor movement
-- `setSelection(start, end)`, `setSelectionInclusive(start, end)`, `clearSelection()` — selection control
+- `setSelection(start, end)`, `setSelectionInclusive(start, end)`, `clearSelection()` — selection control; range offsets use display-width units
 - `gotoVisualLineEnd()`, `gotoLineEnd()` — line boundary jumps
 - `insertText(text)` — insert at cursor
 
 **editorView methods (lower-level):**
 
-- `setCursorByOffset(n)` — position cursor by offset
+- `setCursorByOffset(n)` — position cursor by a global display-width offset, like `cursorOffset`; translate string offsets before using either
 - `getNextWordBoundary()`, `getPrevWordBoundary()` — word boundary detection (enables proper `e` vs `w`)
 - `getEOL()`, `getVisualSOL()`, `getVisualEOL()` — line boundary info
 - `getLineInfo()`, `getLogicalLineInfo()` — line metadata
@@ -57,25 +57,28 @@ vimcode is a TUI plugin for [OpenCode](https://opencode.ai). Before working on i
 - `moveUpVisual()`, `moveDownVisual()` — visual line movement
 - `setSelection()`, `resetSelection()`, `hasSelection()` — selection management
 
+**editBuffer methods:**
+
+- `setCursor(row, col)` — set the cursor without selection handling; row and column use display-width units
+
 This API surface makes text objects (`ciw`, `di"`), direct cursor manipulation, and accurate line operations feasible. The current `setTimeout` + `dispatchCommand` approach can be replaced with direct widget manipulation for most operations.
 
 ## Architecture
 
 ```
 src/
-  index.ts       (414 lines)  Plugin entry: intercept registration, action application
-  index.ts       (408 lines)  Plugin entry: intercept registration, action application
+  index.ts       (479 lines)  Plugin entry: intercept registration, action application
   vim/                        Pure vim engine (thin barrel re-exports the public surface):
     index.ts     (7 lines)    Barrel — public surface only. No export *, no internals.
-    types.ts     (58 lines)   Action union, VimState, Mode, Operator, Pending, Range, KeyEvent, HandlerResult, PromptAccess
+    types.ts     (59 lines)   Action union, VimState, Mode, Operator, Pending, Range, KeyEvent, HandlerResult, PromptAccess
     text.ts      (224 lines)  Pure string algorithms: charKind, endOfWord, currentLineRange, firstNonBlankOnLine, wordRange, bracketRange, quoteRange, anyBracketRange, anyQuoteRange
     tables.ts    (32 lines)   Keybinding maps: MOTIONS, SELECT_MOTIONS, DELETE_MOTION (engine-internal)
     textobject.ts (36 lines)  resolveTextObject — object char → inclusive Range seam (iw/aw, quote/bracket pairs, iq/ib)
     util.ts      (20 lines)   State-agnostic primitives: translateKey, PASS, pushN
-    state.ts     (76 lines)   VimState lifecycle + transitions
-    insert.ts    (32 lines)   handleInsertKey
-    normal.ts    (445 lines)  handleNormalKey (+ file-local finishUndoableChange, applyOperatorRange, isInputEmpty, moveToFirstNonBlank)
-    visual.ts    (112 lines)  handleVisualKey
+    state.ts     (79 lines)   VimState lifecycle + transitions
+    insert.ts    (39 lines)   handleInsertKey
+    normal.ts    (444 lines)  handleNormalKey (+ file-local finishUndoableChange, applyOperatorRange, isInputEmpty)
+    visual.ts    (124 lines)  handleVisualKey
   leader.ts      (73 lines)   Leader key matching: matchesKeyLike, findMatchingLeader, leaderChar
   clipboard.ts   (19 lines)   writeClipboard() — cross-platform (pbcopy/xclip/xsel/wl-copy/clip.exe)
   version.ts     (46 lines)   Version constant, GitHub update check (cached daily)
@@ -83,14 +86,14 @@ test/
   support.ts     (37 lines)   Shared assertion helpers + ev()
   fixtures.ts    (17 lines)   Prompt fixtures: mockPrompt, emptyPrompt
   vim/                        Per-module engine tests mirroring src/vim/:
-    text.test.ts     (408)    endOfWord, charKind, currentLineRange, firstNonBlankOnLine, wordRange, bracketRange, quoteRange, any* units
+    text.test.ts     (412)    endOfWord, charKind, currentLineRange, firstNonBlankOnLine, wordRange, bracketRange, quoteRange, any* units
     state.test.ts    (70)     createVimState, toggleVimMode
     util.test.ts     (35)     translateKey
     insert.test.ts   (108)    handleInsertKey
-    normal.test.ts   (981)    handleNormalKey branches
-    visual.test.ts   (324)    handleVisualKey branches
+    normal.test.ts   (977)    handleNormalKey branches
+    visual.test.ts   (329)    handleVisualKey branches
     textobject.test.ts (64)   resolveTextObject dispatch seam
-  integration.test.ts (579)   Full pipeline: one-shot normal, plugin init, undo snapshots, version sync, prompt overlay tracking
+  integration.test.ts (797)   Full pipeline: cursor positioning, one-shot normal, plugin init, undo snapshots, version sync, prompt overlay tracking
   leader.test.ts (125 lines)  Unit tests for leader key matching functions
 ```
 

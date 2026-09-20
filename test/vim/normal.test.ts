@@ -775,15 +775,11 @@ describe("handleNormalKey — insert entries", () => {
     const prompt: PromptAccess = {
       ...mockPrompt,
       getLine: () => " \t  hello",
+      getPlainText: () => " \t  hello",
     };
     const r = handleNormalKey(state, "I", ev("i", { shift: true }), prompt);
-    expect(cmds(r.actions)).toEqual([
-      "input.line.home",
-      "input.move.right",
-      "input.move.right",
-      "input.move.right",
-      "input.move.right",
-    ]);
+    expect(cursorTos(r.actions)).toEqual([4]);
+    expect(cmds(r.actions)).toEqual([]);
     expect(state.mode).toBe("insert");
   });
 

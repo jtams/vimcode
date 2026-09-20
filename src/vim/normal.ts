@@ -378,8 +378,13 @@ export function handleNormalKey(state: VimState, key: string, ev: KeyEvent, prom
   }
 
   if (key === "I") {
-    moveToFirstNonBlank(actions, prompt.getLine(prompt.getCursorLine()));
+    const offset = firstNonBlankOnLine(prompt.getPlainText(), prompt.getCursorOffset());
+    actions.push({
+      type: "cursorTo",
+      offset,
+    });
     enterInsert(state, actions);
+    state.insertEntryOffset = offset;
     return { consume: true, actions };
   }
 
@@ -436,10 +441,4 @@ function applyOperatorRange(
 
 function isInputEmpty(prompt: PromptAccess): boolean {
   return prompt.getLineCount() === 1 && prompt.getLine(0) === "";
-}
-
-function moveToFirstNonBlank(actions: Action[], line: string) {
-  actions.push({ type: "cmd", cmd: "input.line.home" });
-  const firstNonBlank = line.search(/[^ \t\r]/);
-  if (firstNonBlank !== -1) pushN(actions, "input.move.right", firstNonBlank);
 }

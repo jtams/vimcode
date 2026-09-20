@@ -45,7 +45,7 @@ export function currentLineRange(text: string, offset: number): { start: number;
 
 export function firstNonBlankOnLine(text: string, offset: number, linesDown = 0): number {
   const safeOffset = Math.min(Math.max(offset, 0), text.length);
-  let start = text.lastIndexOf("\n", safeOffset - 1) + 1;
+  let start = safeOffset === 0 ? 0 : text.lastIndexOf("\n", safeOffset - 1) + 1;
   for (let i = 0; i < linesDown; i++) {
     const newline = text.indexOf("\n", start);
     if (newline === -1) break;

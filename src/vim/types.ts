@@ -37,6 +37,7 @@ export type VimState = {
   yankRegister: string;
   oneShotNormal: boolean;
   disabled: boolean;
+  insertEntryOffset?: number;
   visualAnchor?: number;
 };
 

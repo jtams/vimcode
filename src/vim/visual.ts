@@ -76,7 +76,11 @@ export function handleVisualKey(state: VimState, key: string, ev: KeyEvent, prom
   if (key === "e") {
     const n = consumeCount(state);
     const target = endOfWord(prompt.getPlainText(), prompt.getCursorOffset(), n);
-    actions.push({ type: "selectRange", start: state.visualAnchor ?? 0, end: target });
+    actions.push({
+      type: "selectRange",
+      start: state.visualAnchor ?? 0,
+      end: target,
+    });
     actions.push({ type: "cursorTo", offset: target });
     return { consume: true, actions };
   }
@@ -84,7 +88,25 @@ export function handleVisualKey(state: VimState, key: string, ev: KeyEvent, prom
   if (key === "^" || key === "_") {
     const n = consumeCount(state);
     const target = firstNonBlankOnLine(prompt.getPlainText(), prompt.getCursorOffset(), key === "_" ? n - 1 : 0);
-    actions.push({ type: "selectRange", start: state.visualAnchor ?? 0, end: target });
+    actions.push({
+      type: "selectRange",
+      start: state.visualAnchor ?? 0,
+      end: target,
+    });
+    actions.push({ type: "cursorTo", offset: target });
+    return { consume: true, actions };
+  }
+
+  if (key === "h" || key === "l") {
+    const text = prompt.getPlainText();
+    const offset = prompt.getCursorOffset();
+    const count = consumeCount(state);
+    const target = key === "h" ? Math.max(0, offset - count) : Math.min(Math.max(0, text.length - 1), offset + count);
+    actions.push({
+      type: "selectRange",
+      start: state.visualAnchor ?? 0,
+      end: target,
+    });
     actions.push({ type: "cursorTo", offset: target });
     return { consume: true, actions };
   }

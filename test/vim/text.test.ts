@@ -165,6 +165,10 @@ describe("firstNonBlankOnLine", () => {
   it("returns the line start when the line is blank", () => {
     expect(firstNonBlankOnLine("  \t\r\nnext", 0)).toBe(0);
   });
+
+  it("keeps the cursor on an initial blank line", () => {
+    expect(firstNonBlankOnLine("\nhello", 0)).toBe(0);
+  });
 });
 
 // ── wordRange (inner) ──────────────────────────────────────

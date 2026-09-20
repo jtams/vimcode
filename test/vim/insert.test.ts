@@ -60,7 +60,7 @@ describe("handleInsertKey", () => {
     expect(cursorLefts(r.actions)).toBe(1);
   });
 
-  it("I then escape moves left from the textarea cursor", () => {
+  it("I then escape keeps the cursor at the first non-blank character", () => {
     const prompt: PromptAccess = {
       getLine: () => "       test test test",
       getLineCount: () => 1,
@@ -73,7 +73,7 @@ describe("handleInsertKey", () => {
     expect(enterInsert.actions).toContainEqual({ type: "mode", mode: "insert" });
 
     const leaveInsert = handleInsertKey(state, "escape", ev("escape"), prompt);
-    expect(cursorLefts(leaveInsert.actions)).toBe(1);
+    expect(cursorLefts(leaveInsert.actions)).toBe(0);
   });
 
   it("escape at position 0 does not move cursor", () => {
